@@ -1,0 +1,275 @@
+#!perl
+
+our $DATE = '2014-12-14'; # DATE
+our $VERSION = '0.03'; # VERSION
+
+# FRAGMENT id=shcompgen-hint completer=1 for=cpanm
+
+use 5.010001;
+use strict;
+use warnings;
+use Log::Any '$log';
+
+use Complete::Util qw(complete_array_elem complete_file);
+use Getopt::Long::Complete qw(GetOptionsWithCompletion);
+use List::MoreUtils qw(uniq);
+
+die "This script is for shell completion only\n"
+    unless $ENV{COMP_LINE};
+
+my $noop = sub {};
+
+# complete with list of installed modules
+my $comp_installed_mods = sub {
+    require Complete::Module;
+
+    my %args = @_;
+
+    $log->tracef("Adding completion: installed modules");
+    Complete::Module::complete_module(
+        word => $args{word},
+        ci   => 1,
+    );
+};
+
+# complete with installable stuff
+my $comp_installable = sub {
+    require Complete::Module;
+    require XPAN::Query;
+
+    my %args = @_;
+    my $word   = $args{word} // '';
+    my $mirror = $args{mirror}; # XXX support multiple mirrors
+
+    my @res;
+
+    $log->tracef("Adding completion: tarballs & dirs");
+    push @res,
+        @{ complete_file(
+            filter => sub { /\.(zip|tar\.gz|tar\.bz2)$/i || (-d $_) },
+            word   => $word,
+            ci     => 1,
+        ) };
+
+    $log->tracef("Adding completion: installed modules (e.g. when upgrading)");
+    push @res, @{ Complete::Module::complete_module(
+        word   => $word,
+        ci     => 1,
+    ) };
+
+    $log->tracef("Adding completion: modules from CPAN mirror");
+    push @res, grep {
+        if ($word =~ /:\z/) {
+            /\A\Q$word\E:+[^:]+(::)?\z/i;
+        } else {
+            /\A\Q$word\E[^:]*\z/i;
+        }} @{
+            XPAN::Query::list_xpan_modules(
+                url   => $mirror,
+                query => $word . '%',
+            )};
+
+    # TODO module name can be suffixed with '@<version>'
+
+    [uniq(sort(@res))];
+};
+
+my $comp_file = sub {
+    my %args = @_;
+
+    complete_file(
+        word => $args{word},
+        ci   => 1,
+    );
+};
+
+# this is taken from App::cpanminus::script and should be updated from time to
+# time.
+GetOptionsWithCompletion(
+    sub {
+        my %args  = @_;
+        my $type      = $args{type};
+        my $word      = $args{word};
+        if ($type eq 'arg') {
+            $log->tracef("Completing arg");
+            my $seen_opts = $args{seen_opts};
+            if ($seen_opts->{'--uninstall'} || $seen_opts->{'--reinstall'}) {
+                return $comp_installed_mods->(word=>$word);
+            } else {
+                return $comp_installable->(
+                    word=>$word, mirror=>$seen_opts->{'--mirror'});
+            }
+        } elsif ($type eq 'optval') {
+            my $ospec = $args{ospec};
+            my $opt   = $args{opt};
+            $log->tracef("Completing optval (opt=$opt)");
+            if ($ospec eq 'l|local-lib=s' ||
+                    $ospec eq 'L|local-lib-contained=s') {
+                return complete_file(filter=>'d', word=>$word);
+            } elsif ($ospec eq 'format=s') {
+                return complete_array_elem(
+                    array=>[qw/tree json yaml dists/], word=>$word);
+            } elsif ($ospec eq 'cpanfile=s') {
+                return complete_file(word=>$word);
+            }
+        }
+        return [];
+    },
+    'f|force'   => $noop,
+    'n|notest!' => $noop,
+    'test-only' => $noop,
+    'S|sudo!'   => $noop,
+    'v|verbose' => $noop,
+    'verify!'   => $noop,
+    'q|quiet!'  => $noop,
+    'h|help'    => $noop,
+    'V|version' => $noop,
+    'perl=s'          => $noop,
+    'l|local-lib=s'   => $noop,
+    'L|local-lib-contained=s' => $noop,
+    'self-contained!' => $noop,
+    'mirror=s@'       => $noop,
+    'mirror-only!'    => $noop,
+    'mirror-index=s'  => $noop,
+    'cpanmetadb=s'    => $noop,
+    'cascade-search!' => $noop,
+    'prompt!'         => $noop,
+    'installdeps'     => $noop,
+    'skip-installed!' => $noop,
+    'skip-satisfied!' => $noop,
+    'reinstall'       => $noop,
+    'interactive!'    => $noop,
+    'i|install'       => $noop,
+    'info'            => $noop,
+    'look'            => $noop,
+    'U|uninstall'     => $noop,
+    'self-upgrade'    => $noop,
+    'uninst-shadows!' => $noop,
+    'lwp!'    => $noop,
+    'wget!'   => $noop,
+    'curl!'   => $noop,
+    'auto-cleanup=s' => $noop,
+    'man-pages!' => $noop,
+    'scandeps'   => $noop,
+    'showdeps'   => $noop,
+    'format=s'   => $noop,
+    'save-dists=s' => $noop,
+    'skip-configure!' => $noop,
+    'dev!'       => $noop,
+    'metacpan!'  => $noop,
+    'report-perl-version!' => $noop,
+    'configure-timeout=i' => $noop,
+    'build-timeout=i' => $noop,
+    'test-timeout=i' => $noop,
+    'with-develop' => $noop,
+    'without-develop' => $noop,
+    'with-feature=s' => $noop,
+    'without-feature=s' => $noop,
+    'with-all-features' => $noop,
+    'pp|pureperl!' => $noop,
+    "cpanfile=s" => $noop,
+    #$self->install_type_handlers,
+    #$self->build_args_handlers,
+);
+
+# ABSTRACT: Shell completer for cpanm
+# PODNAME: _cpanm
+
+__END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+_cpanm - Shell completer for cpanm
+
+=head1 VERSION
+
+This document describes version 0.03 of _cpanm (from Perl distribution App-ShellCompleter-cpanm), released on 2014-12-14.
+
+=head1 SYNOPSIS
+
+To install, install this module and then in your bash (and/or bash startup
+file):
+
+ complete -C _cpanm cpanm
+
+or, you can use L<shcompgen> to do that for you automatically.
+
+Now L<cpanm> has bash completion:
+
+ % cpanm --s<tab>
+ % cpanm --uninstall "Text::A<tab>
+
+=head1 TODO
+
+=head1 FAQ
+
+=head2 Why does "Foo::Bar" complete to "Foo::Foo::Bar"?
+
+That is, when we want to complete a module name that contains a double colon,
+the completion repeats the full module name instead of completing it.
+
+Colon is problematic because by default it is a word breaking character in bash.
+This means, in this command. The workaround is to use quotes, e.g.:
+
+ % cpanm -U "Text:<tab>
+
+=head1 COMPLETION
+
+This script has shell tab completion capability with support for several shells.
+
+=head2 bash
+
+To activate bash completion for this script, put:
+
+ complete -C _cpanm _cpanm
+
+in your bash startup (e.g. C<~/.bashrc>). Your next shell session will then recognize tab completion for the command. Or, you can also directly execute the line above in your shell to activate immediately.
+
+It is recommended, however, that you install L<shcompgen> which allows you to activate completion scripts for several kinds of scripts on multiple shells. Some CPAN distributions (those that are built with L<Dist::Zilla::Plugin::GenShellCompletion>) will even automatically enable shell completion for their included scripts (using C<shcompgen>) at installation time, so you can immadiately have tab completion.
+
+=head2 tcsh
+
+To activate tcsh completion for this script, put:
+
+ complete _cpanm 'p/*/`_cpanm`/'
+
+in your tcsh startup (e.g. C<~/.tcshrc>). Your next shell session will then recognize tab completion for the command. Or, you can also directly execute the line above in your shell to activate immediately.
+
+It is also recommended to install C<shcompgen> (see above).
+
+=head2 other shells
+
+For fish and zsh, install C<shcompgen> as described above.
+
+=head1 HOMEPAGE
+
+Please visit the project's homepage at L<https://metacpan.org/release/App-ShellCompleter-cpanm>.
+
+=head1 SOURCE
+
+Source repository is at L<https://github.com/perlancar/perl-App-BashCompleter-cpanm>.
+
+=head1 BUGS
+
+Please report any bugs or feature requests on the bugtracker website L<https://rt.cpan.org/Public/Dist/Display.html?Name=App-ShellCompleter-cpanm>
+
+When submitting a bug or request, please include a test-file or a
+patch to an existing test-file that illustrates the bug or desired
+feature.
+
+=head1 AUTHOR
+
+perlancar <perlancar@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2014 by perlancar@cpan.org.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
