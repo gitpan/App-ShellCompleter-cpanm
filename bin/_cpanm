@@ -1,7 +1,7 @@
 #!perl
 
-our $DATE = '2014-12-14'; # DATE
-our $VERSION = '0.03'; # VERSION
+our $DATE = '2014-12-29'; # DATE
+our $VERSION = '0.04'; # VERSION
 
 # FRAGMENT id=shcompgen-hint completer=1 for=cpanm
 
@@ -28,7 +28,6 @@ my $comp_installed_mods = sub {
     $log->tracef("Adding completion: installed modules");
     Complete::Module::complete_module(
         word => $args{word},
-        ci   => 1,
     );
 };
 
@@ -187,7 +186,7 @@ _cpanm - Shell completer for cpanm
 
 =head1 VERSION
 
-This document describes version 0.03 of _cpanm (from Perl distribution App-ShellCompleter-cpanm), released on 2014-12-14.
+This document describes version 0.04 of _cpanm (from Perl distribution App-ShellCompleter-cpanm), released on 2015-12-29.
 
 =head1 SYNOPSIS
 
@@ -206,14 +205,6 @@ Now L<cpanm> has bash completion:
 =head1 TODO
 
 =head1 FAQ
-
-=head2 Why does "Foo::Bar" complete to "Foo::Foo::Bar"?
-
-That is, when we want to complete a module name that contains a double colon,
-the completion repeats the full module name instead of completing it.
-
-Colon is problematic because by default it is a word breaking character in bash.
-This means, in this command. The workaround is to use quotes, e.g.:
 
  % cpanm -U "Text:<tab>
 
