@@ -28,7 +28,7 @@ resources:
   bugtracker: https://rt.cpan.org/Public/Dist/Display.html?Name=App-ShellCompleter-cpanm
   homepage: https://metacpan.org/release/App-ShellCompleter-cpanm
   repository: git://github.com/perlancar/perl-App-BashCompleter-cpanm.git
-version: '0.05'
+version: '0.06'
 x_Dist_Zilla:
   perl:
     version: '5.018002'
