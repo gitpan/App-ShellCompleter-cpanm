@@ -27,7 +27,6 @@ my %WriteMakefileArgs = (
     "Complete::Module" => "0.12",
     "Complete::Util" => 0,
     "Getopt::Long::Complete" => 0,
-    "List::MoreUtils" => 0,
     "Log::Any" => 0,
     "XPAN::Query" => "0.07"
   },
@@ -37,7 +36,7 @@ my %WriteMakefileArgs = (
     "IPC::Open3" => 0,
     "Test::More" => 0
   },
-  "VERSION" => "0.04",
+  "VERSION" => "0.05",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -52,7 +51,6 @@ my %FallbackPrereqs = (
   "Getopt::Long::Complete" => 0,
   "IO::Handle" => 0,
   "IPC::Open3" => 0,
-  "List::MoreUtils" => 0,
   "Log::Any" => 0,
   "Perl::osnames" => "0.09",
   "Test::More" => 0,
