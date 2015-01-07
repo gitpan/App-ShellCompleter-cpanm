@@ -1,7 +1,7 @@
 #!perl
 
-our $DATE = '2014-12-31'; # DATE
-our $VERSION = '0.06'; # VERSION
+our $DATE = '2015-01-07'; # DATE
+our $VERSION = '0.07'; # VERSION
 
 # FRAGMENT id=shcompgen-hint completer=1 for=cpanm
 
@@ -39,6 +39,13 @@ my $comp_installable = sub {
     my $word   = $args{word} // '';
     my $mirror = $args{mirror}; # XXX support multiple mirrors
 
+    # if user already types something that looks like a path instead of module
+    # name, like '../' or perhaps 'C:\' (windows) then don't bother to complete
+    # with module name because it will just delay things without getting any
+    # result
+    my $looks_like_completing_module =
+        $word eq '' || $word =~ /\A(\w+)(::\w+)*/;
+
     my @answers;
 
     $log->tracef("Adding completion: tarballs & dirs");
@@ -47,12 +54,12 @@ my $comp_installable = sub {
             filter => sub { /\.(zip|tar\.gz|tar\.bz2)$/i || (-d $_) },
             word   => $word,
         );
-        $log->tracef("  answer: %s", $answer);
+        $log->tracef("  answer: %s", {words=>$answer, path_sep=>'/'});
         push @answers, $answer;
     }
 
     $log->tracef("Adding completion: installed modules (e.g. when upgrading)");
-    {
+    if ($looks_like_completing_module) {
         my $answer = Complete::Module::complete_module(
             word   => $word,
         );
@@ -61,7 +68,7 @@ my $comp_installable = sub {
     }
 
     $log->tracef("Adding completion: modules from CPAN mirror");
-    {
+    if ($looks_like_completing_module) {
         my $mods = XPAN::Query::list_xpan_modules(
             url   => $mirror,
             query => $word . '%',
@@ -196,7 +203,7 @@ _cpanm - Shell completer for cpanm
 
 =head1 VERSION
 
-This document describes version 0.06 of _cpanm (from Perl distribution App-ShellCompleter-cpanm), released on 2015-12-31.
+This document describes version 0.07 of _cpanm (from Perl distribution App-ShellCompleter-cpanm), released on 2015-01-07.
 
 =head1 SYNOPSIS
 
@@ -211,12 +218,6 @@ Now L<cpanm> has bash completion:
 
  % cpanm --s<tab>
  % cpanm --uninstall "Text::A<tab>
-
-=head1 TODO
-
-=head1 FAQ
-
- % cpanm -U "Text:<tab>
 
 =head1 COMPLETION
 
@@ -268,7 +269,7 @@ perlancar <perlancar@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2014 by perlancar@cpan.org.
+This software is copyright (c) 2015 by perlancar@cpan.org.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
