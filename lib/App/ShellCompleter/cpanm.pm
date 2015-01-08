@@ -1,7 +1,7 @@
 package App::ShellCompleter::cpanm;
 
-our $DATE = '2015-01-07'; # DATE
-our $VERSION = '0.07'; # VERSION
+our $DATE = '2015-01-08'; # DATE
+our $VERSION = '0.08'; # VERSION
 
 1;
 # ABSTRACT: Shell completion for cpanm
@@ -18,7 +18,7 @@ App::ShellCompleter::cpanm - Shell completion for cpanm
 
 =head1 VERSION
 
-This document describes version 0.07 of App::ShellCompleter::cpanm (from Perl distribution App-ShellCompleter-cpanm), released on 2015-01-07.
+This document describes version 0.08 of App::ShellCompleter::cpanm (from Perl distribution App-ShellCompleter-cpanm), released on 2015-01-08.
 
 =head1 SYNOPSIS
 
